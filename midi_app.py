@@ -83,9 +83,10 @@ class App:
         self.running = False
 
     def tick(self):
-        self.ticks += 1
-        if self.ticks % 96 == 0:
-            print("Beat", self.ticks // 96)
+        with self._tick_mutex:
+            self.ticks += 1
+            if self.ticks % 96 == 0:
+                print("Beat", self.ticks // 96)
 
     async def handle_events(self):
         r = self.input_handler.check_for_events()
