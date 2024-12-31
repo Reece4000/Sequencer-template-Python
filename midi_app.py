@@ -65,10 +65,21 @@ class Renderer:
         self.screen = pygame.display.set_mode((1280, 720), vsync=1)
         self.font = pygame.font.SysFont("Consolas", 32, bold=True)
 
-    def update_view(self, beat):
+    def update_view(self, ticks):
         self.screen.fill((40, 60, 60))
-        rendered_text = self.font.render(f"Beat {beat}", 1, (255, 255, 255))
-        self.screen.blit(rendered_text, (570, 350))
+        bar, beat, sixteenths = (ticks // 384), (ticks // 96) % 4, (ticks // 24) % 16
+
+        display_text = f"Bar: {bar + 1:>03}  |  Beat: {beat + 1:>03}  |  Sixteenths: {sixteenths + 1:>02}  |  Ticks: {(ticks + 1) % 96:>02}"
+        text = self.font.render(display_text, antialias=1, color=(255, 255, 255))
+
+        self.screen.blit(text, (160, 350))
+
+        for i in range(16):
+            pos = (178 + i * 64, 250)
+            color = (255, 100, 100) if i == sixteenths else (30, 30, 30) if i % 4 != 0 else (100, 100, 100)
+            pygame.draw.circle(self.screen, color, pos, 10, 0)
+            pygame.draw.circle(self.screen, (0, 0, 0), pos, 12, 2)
+
         pygame.display.flip()
         
         
@@ -85,8 +96,6 @@ class App:
     def tick(self):
         with self._tick_mutex:
             self.ticks += 1
-            if self.ticks % 96 == 0:
-                print("Beat", self.ticks // 96)
 
     async def handle_events(self):
         r = self.input_handler.check_for_events()
@@ -104,7 +113,7 @@ class App:
         self.quit()
         
     def update_view_states(self):
-        self.renderer.update_view(self.ticks // 96)
+        self.renderer.update_view(self.ticks)
         
     def quit(self):
         self.clock.stop()
